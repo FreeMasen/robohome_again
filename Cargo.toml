@@ -1,0 +1,15 @@
+[package]
+name = "robohome_again"
+version = "0.1.0"
+authors = ["Robert Masen <r@robertmasen.pizza>"]
+
+[dependencies]
+
+
+[workspace]
+members = [
+    "crates/flipper",
+    "crates/remote",
+    "crates/schedule",
+    "crates/shared",
+]

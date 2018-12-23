@@ -1,0 +1,226 @@
+html, body {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: slategrey;
+    color: #fbfb71;
+}
+
+* {
+    box-sizing: border-box;
+    font-family: sans-serif;
+}
+
+header {
+    width: 100%;
+    text-align: center;
+
+    background-color: navy;
+    margin-top: 0;
+    margin-bottom: 10px;
+    padding: 10px 0;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+
+    from {
+        transform: rotate(0);
+    }
+}
+
+.loading-spinner {
+    background: #fbfb71;
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    animation-duration: 1.5s;
+    animation-name: spin;
+    animation-iteration-count: infinite;
+    display: flex;
+    flex-flow: row;
+    justify-content: space-between;
+    margin: 100px auto 0;
+}
+
+.spinner-inner {
+    width: 15px;
+    height: 15px;
+    margin: auto;
+    background: navy;
+    border-radius: 50%;
+}
+
+.switch-list {
+    display: flex;
+    flex-flow: row wrap;
+    justify-content: center;
+    align-items: center;
+    align-content: flex-start;
+    margin: auto;
+    max-width: 750px;
+}
+
+.switch-plate {
+    display: grid;
+    grid-template-rows: 50px 50px 25px;
+    grid-template-columns: 50px 75px 75px 50px;
+    grid-template-areas:
+        'title title title  title'
+        'left  on    off    blank'
+        'left  x     x      info';
+    margin: 5px;
+    box-shadow: 2px 2px 3px 1px #fbfb71;
+    border-radius: 5px;
+}
+
+.switch-name {
+    grid-area: title;
+    font-size: 18pt;
+    display: block;
+    line-height: 2;
+    height: 50px;
+    text-align: center;
+    color: ghostwhite;
+}
+
+.button {
+    display: block;
+    padding: 10px 5px;
+    width: 70px;
+    height: 40px;
+    box-shadow: 1px 1px 1px 1px rgba(0,0,0,0.2);
+    text-align: center;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.button:hover {
+    transform: translate(-1px, -1px);
+}
+
+.button:active {
+    transform: translate(1px, 1px);
+}
+
+.button > span {
+    display: block;
+    line-height: 1.5;
+    cursor: pointer;
+}
+
+.on {
+    grid-area: on;
+    background: #fbfb71;
+    color: navy;
+}
+
+.off {
+    grid-area: off;
+    background: navy;
+}
+
+.info {
+    grid-area: info;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    font-size: 10pt;
+    border: 1px solid #fbfb71;
+    padding: 0;
+}
+
+.info > span {
+    line-height: 1.2;
+}
+
+.switch-info-container {
+    display: grid;
+    grid-template-columns: 50px 200px 50px;
+    grid-template-rows: 40px 120px auto;
+    grid-template-areas:
+        'left title right'
+        'left input right'
+        'sch  sch   sch  '
+        'but  but   but  '
+    ;
+    margin: auto;
+    width: 300px;
+    box-shadow: 1px 1px 1px 1px #fbfb71;
+}
+
+.switch-info-container > .switch-name {
+    grid-area: title;
+    margin: auto;
+    text-align: center;
+    display: inline;
+}
+
+.switch-info-container > .direction-info {
+    grid-area: input;
+    display: grid;
+    grid-template-rows: 60px 60px;
+    grid-template-columns: 100%;
+    grid-template-areas:
+        'on '
+        'off'
+    ;
+}
+
+.switch-info-container > .direction-info > .direction-group {
+    display: grid;
+    grid-template-rows: 25px 30px;
+    grid-template-columns: 100%;
+    grid-template-areas: 
+        'label' 'input';
+}
+
+.switch-info-container > .direction-info > .direction-group > label {
+    grid-area: label;
+    font-size: 16pt;
+    text-align: center;
+}
+
+.switch-info-container > .direction-info > .direction-group > input {
+    grid-area: input;   
+    font-size: 16pt;
+    width: 100%;
+    text-align: center;
+    -webkit-appearance: textfield;
+}
+
+.switch-info-container > .flips {
+    grid-area: sch;
+    display: grid;
+    grid-template-rows: repeat(25px);
+    grid-template-columns: 100%;
+}
+
+.switch-info-container > .flips > .flip-info {
+    width: 300px;
+    text-align: center;
+}
+
+.switch-info-container > .flips > .flip-info > span {
+    font-weight: bold;
+    padding: 2px 0;
+    display: inline-block;
+}
+
+.switch-info-container > .flips > .flip-info > table {
+    width: 300px;
+    border: 1px solid;
+    border-collapse: collapse;
+}
+
+.switch-info-container > .flips > .flip-info > table > tbody > tr > td {
+    width: calc(400px / 7);
+    text-align: center;
+    border: 1px solid;
+}
+
+.switch-info-buttons {
+    grid-area: but;
+}

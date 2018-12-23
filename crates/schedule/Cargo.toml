@@ -1,0 +1,10 @@
+[package]
+name = "schedule"
+version = "0.1.0"
+authors = ["Robert Masen <r@robertmasen.pizza>"]
+
+[dependencies]
+robohome_shared = { path = "../shared" }
+log = "0.4"
+env_logger = "0.6.0"
+chrono = "0.4"

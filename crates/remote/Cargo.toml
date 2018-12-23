@@ -1,0 +1,8 @@
+[package]
+name = "remote"
+version = "0.1.0"
+authors = ["Robert Masen <r@robertmasen.pizza>"]
+
+[dependencies]
+robohome_shared = { path = "../shared" }
+codesender = { git = "https://github.com/freemasen/codesender" }
