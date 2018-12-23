@@ -1,0 +1,6 @@
+/target
+**/*.rs.bk
+db_connection
+**/node_modules
+**/js/
+.vscode
