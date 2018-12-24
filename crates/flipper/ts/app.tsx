@@ -190,7 +190,7 @@ export class App extends React.Component<{}, IAppState> {
     getSwitchDetails(sw: Switch) {
         console.log('getting switch details', sw);
         this.setState({view: View.Loading});
-        Http.post('/switch', sw, arr => arr.map(ScheduledFlip.fromJson))
+        Http.put('/switch', sw, arr => arr.map(ScheduledFlip.fromJson))
             .then(r => {
                 if (r.is_err()) {
                     return this.httpFail(r.errorMessage());
