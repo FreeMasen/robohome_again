@@ -29,8 +29,13 @@ fn handle_message(r: Result<Flip, Error>) {
 }
 
 fn send_code(f: Flip) {
-    match send(f.code as usize, 17, 180) {
-        Ok(_) => println!("Successfully sent {}", f.code),
-        Err(e) => eprintln!("Failed to send: {}\n{}", f.code, e),
+    for _ in 0..10 {
+        match send(f.code as usize, 17, 180) {
+            Ok(_) => println!("Successfully sent {}", f.code),
+            Err(e) => {
+                eprintln!("Failed to send: {}\n{}", f.code, e);
+                break;
+            },
+        }
     }
 }
