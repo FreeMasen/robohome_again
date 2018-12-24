@@ -13,14 +13,23 @@ fn main() {
                 .expect("Failed to establish listener");
     loop {
         match rx.recv() {
-            Ok(f) => {
-                if let Err(e) = send(f.code, 17, 180) {
-                    eprintln!("Failed to send: {}\n{}", f.code, e);
-                } else {
-                    eprintln!("Successfully sent {}", f.code);
-                }
-            },
+            Ok(r) => handle_message(r),
             Err(e) => panic!("Error recv: {}", e),
         };
+    }
+}
+
+
+fn handle_message(r: Result<Flip, Error>) {
+    match r {
+        Ok(f) send_code(f),
+        Err(e) => eprintln!("{}", e);
+    }
+}
+
+fn send_code(f: Flip) {
+    match send(f.code as usize, 17, 180) {
+        Ok(_) => println!("Successfully sent {}", f.code),
+        Err(e) => eprintln!("Failed to send: {}\n{}", f.code, e),
     }
 }
