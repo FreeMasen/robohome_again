@@ -3,6 +3,8 @@ extern crate serde_json;
 extern crate warp;
 extern crate env_logger;
 extern crate uuid;
+#[macro_use]
+extern crate log;
 
 use robohome_shared::{
     data::{
@@ -33,8 +35,7 @@ use warp::{
 };
 
 fn main() {
-
-    ::std::env::set_var("RUST_LOG", "debug");
+    ::std::env::set_var("RUST_LOG", "info");
     env_logger::init();
     let flipping = put2()
         .and(path("flip"))
@@ -68,6 +69,7 @@ fn main() {
 // }
 
 fn flip_switch(flip: Flip) -> impl Reply {
+    info!("POST /flip: {:?}", flip);
     match send("switches", &flip) {
         Ok(_) => Response::builder().body(format!(r#"{{flipped: {}}}"#, flip.code)),
         Err(e) => {
@@ -80,6 +82,7 @@ fn flip_switch(flip: Flip) -> impl Reply {
 }
 
 fn get_switch_flips(switch: Switch) -> impl Reply {
+    info!("PUT /switch");
     let (status, body) = get_switch_flips_response(switch);
     Response::builder()
             .status(status)
@@ -87,6 +90,7 @@ fn get_switch_flips(switch: Switch) -> impl Reply {
 }
 
 fn get_switches() -> impl Reply {
+    info!("GET /switches");
     let (status, body) = get_switches_response();
     Response::builder()
         .status(status)

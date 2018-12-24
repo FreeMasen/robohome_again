@@ -9,3 +9,4 @@ warp = "0.1"
 serde_json = "1"
 env_logger = "0.5"
 uuid = { version = "0.5", features = ["v4", "serde"] }
+log = "0.4"
