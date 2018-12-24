@@ -11,7 +11,6 @@ use std::{
 use super::Error;
 use amqp::{
     Basic,
-    Options,
     protocol::basic::BasicProperties,
     Session,
     Table,
@@ -19,11 +18,11 @@ use amqp::{
 use serde;
 use bincode;
 
+static CONN_STR: &str = include_str!("../../../mq_connection");
+
 pub fn send<T>(queue: &str, msg: &T) -> Result<(), Error>
 where T: serde::Serialize + Send {
-    let mut s = Session::new( Options {
-        .. Default::default()
-    })?;
+    let mut s = Session::open_url(CONN_STR).expect("Failed to connect to rabbit mq");
     let mut c = s.open_channel(1)?;
     let _ = c.queue_declare(queue, false, true, false, true, false, Table::new())?;
     let p: BasicProperties = Default::default();

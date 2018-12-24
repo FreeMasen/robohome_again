@@ -4,3 +4,4 @@ db_connection
 **/node_modules
 **/js/
 .vscode
+mq_connection
