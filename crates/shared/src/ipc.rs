@@ -37,7 +37,7 @@ type Rec<T> = Receiver<Result<T, Error>>;
 pub fn listen<T: 'static>(queue: &'static str) -> Result<Rec<T>, Error>
 where for<'a> T: serde::Deserialize<'a> + Send {
     let (tx, rx) = channel::<Result<T, Error>>();
-    let mut s = Session::new(Default::default())?;
+    let mut s = Session::open_url(CONN_STR)?;
     let mut c = s.open_channel(1)?;
     c.basic_prefetch(10)?;
     let _ = c.queue_declare(queue, false, true, false, true, false, Table::new())?;

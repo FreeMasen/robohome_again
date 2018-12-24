@@ -34,8 +34,9 @@ use robohome_shared::{
 };
 
 fn main() -> Result<(), Error> {
-    ::std::env::set_var("RUST_LOG", "robohome");
+    ::std::env::set_var("RUST_LOG", "info");
     env_logger::init();
+    info!("Booting scheduler");
     let (tx, rx) = channel();
     let timer_tx = tx.clone();
 
@@ -53,6 +54,7 @@ fn main() -> Result<(), Error> {
     let _ = Builder::new()
         .name(format!("lookup_thread"))
         .spawn(move || {
+            info!("Spawning lookup thread");
             let out = tx2;
             let rx = lookup_rx;
             let mut all_day: Vec<Flip> = get_flips_for_today().unwrap_or(vec![]);
@@ -61,6 +63,7 @@ fn main() -> Result<(), Error> {
                 match rx.recv() {
                     Ok(msg) => match msg {
                         Message::Tick => {
+                            info!("lookup: tick");
                             let now = Utc::now();
                             let for_sending = all_day.clone().into_iter().filter(|f| {
                                 f.hour == (now.time().hour() as i32) && f.minute == (now.time().minute() as i32)
@@ -68,6 +71,7 @@ fn main() -> Result<(), Error> {
                             let _ = out.send(Message::Flips(for_sending));
                         },
                         Message::Refresh => {
+                            info!("lookup: refresh");
                             match get_flips_for_today() {
                                 Ok(today) => all_day = today,
                                 Err(e) => {
@@ -76,7 +80,7 @@ fn main() -> Result<(), Error> {
                                 }
                             }
                         },
-                        _ => (),
+                        _ => info!("Unknown message"),
                     },
                     Err(e) => error!(target: "robohome", "lookup_thread error: {}", e),
                 }
@@ -85,6 +89,7 @@ fn main() -> Result<(), Error> {
     let _ = Builder::new()
         .name(format!("db_update_thread"))
         .spawn(move || {
+            info!("spawning db update thread");
             let tx = tx;
             let db_rx: Receiver<Result<(), Error>> = match listen("database") {
                 Ok(rx) => rx,
@@ -96,27 +101,34 @@ fn main() -> Result<(), Error> {
             loop {
                 match db_rx.recv() {
                     Ok(_) => {
+                        error!("Sending refresh message");
                         let _ = tx.send(Message::Refresh);
                     },
-                    Err(e) => error!(target: "robohome", "ipc_thread error: {}", e),
+                    Err(e) => error!("ipc_thread error: {}", e),
                 }
             }
         });
     loop {
         match rx.recv() {
             Ok(msg) => {
-                debug!(target: "robohome", "Main Thread: {:?}", msg);
+                debug!("Main Thread: {:?}", msg);
                 match msg {
                     Message::Tick => {
-                        lookup_tx.send(Message::Tick).expect("Failed to send tick message");
+                        if let Err(e) = lookup_tx.send(Message::Tick){
+                            error!("Failed to send tick message {}", e);
+                        }
                     },
                     Message::Flips(flips) => {
                         for ref flip in flips {
-                            send("switches", &flip).expect("Failed to send flip message");
+                            if let Err(e) = send("switches", &flip){
+                                error!("Failed to send flip message {}", e);
+                            }
                         }
                     },
                     Message::Refresh => {
-                        lookup_tx.send(Message::Refresh).expect("Failed to send refresh message");
+                        if let Err(e) = lookup_tx.send(Message::Refresh){
+                            error!("Failed to send refresh message {}", e);
+                        }
                     }
                 }
             },
@@ -127,7 +139,6 @@ fn main() -> Result<(), Error> {
 #[derive(Debug)]
 enum Message {
     Flips(Vec<Flip>),
-    Flip(i32),
     Refresh,
     Tick,
 }
