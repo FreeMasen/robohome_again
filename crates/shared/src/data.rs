@@ -25,6 +25,8 @@ use std::fmt::{
     Result as FmtRes,
 };
 
+use ipc::send;
+
 const CONN_STR: &str = include_str!("../../../db_connection");
 
 fn get_connection() -> Result<Connection, Error> {
@@ -166,6 +168,7 @@ pub fn get_flips_this_minute() -> Result<Vec<Flip>, Error> {
                 .iter()
                 .map(map_flip)
                 .collect();
+
     Ok(ret)
 }
 
@@ -257,6 +260,7 @@ pub fn update_switch(id: i32, name: &str, on_code: i32, off_code: i32) -> Result
                        .map(map_switch)
                        .next()
                        .ok_or(Error::new("Nothing returned from switch update"))?;
+    let _ = send("database", &());
     Ok(ret)
 }
 
@@ -270,6 +274,7 @@ pub fn update_flip(id: i32, hour: i32, minute: i32, dow: DayOfTheWeek, direction
                 .map(map_scheduled_flip)
                 .next()
                 .ok_or(Error::new("Nothing returned from flip update"))?;
+    let _ = send("database", &());
     Ok(ret)
 }
 
@@ -286,6 +291,7 @@ pub fn remove_switch(id: i32) -> Result<i32, Error> {
                 .next()
                 .ok_or(Error::new("Unable to get remove count"))
                 .map(|row| row.get(0))?;
+    let _ = send("database", &());
     Ok(ret)
 }
 
@@ -298,6 +304,7 @@ pub fn remove_flip(id: i32) -> Result<i32, Error> {
                 .next()
                 .ok_or(Error::new("Unable to get remove count"))
                 .map(|row| row.get(0))?;
+    let _ = send("database", &());
     Ok(ret)
 }
 // **********
@@ -362,13 +369,13 @@ impl Into<i32> for DayOfTheWeek {
 impl From<i32> for DayOfTheWeek {
     fn from(v: i32) -> DayOfTheWeek {
         DayOfTheWeek {
-            monday: v & 1 > 0,
-            tuesday: v & 2 > 0,
-            wednesday: v & 4 > 0,
-            thursday: v & 8 > 0,
-            friday: v & 16 > 0,
-            saturday: v & 32 > 0,
-            sunday: v & 64 > 0,
+            monday:    v &  1 > 0,
+            tuesday:   v &  2 > 0,
+            wednesday: v &  4 > 0,
+            thursday:  v &  8 > 0,
+            friday:    v & 16 > 0,
+            saturday:  v & 32 > 0,
+            sunday:    v & 64 > 0,
         }
     }
 }
@@ -444,7 +451,7 @@ mod test {
     use super::*;
     #[test]
     fn dow_int() {
-        for i in 0..(64) {
+        for i in 0..128 {
             let dow: DayOfTheWeek = i.into();
             let back: i32 = dow.into();
             assert_eq!(i, back);
@@ -543,6 +550,6 @@ mod test {
         println!("Removing flip");
         remove_flip(fl1.id).expect("failed to remove flip");
         println!("Removing switch");
-        remove_switch(sw1.id).expect("faile to remove switch");
+        remove_switch(sw1.id).expect("failed to remove switch");
     }
 }

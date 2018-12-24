@@ -20,7 +20,7 @@ use serde;
 use bincode;
 
 pub fn send<T>(queue: &str, msg: &T) -> Result<(), Error>
-where T: serde::Serialize {
+where T: serde::Serialize + Send {
     let mut s = Session::new( Options {
         .. Default::default()
     })?;

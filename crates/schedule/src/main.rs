@@ -23,7 +23,7 @@ use chrono::{
 
 use robohome_shared::{
     data::{
-        ScheduledFlip,
+        Flip,
         get_flips_for_today,
     },
     Error,
@@ -55,7 +55,7 @@ fn main() -> Result<(), Error> {
         .spawn(move || {
             let out = tx2;
             let rx = lookup_rx;
-            let mut all_day: Vec<ScheduledFlip> = get_flips_for_today().expect("Failed to get initial flips");
+            let mut all_day: Vec<Flip> = get_flips_for_today().unwrap_or(vec![]);
             debug!(target: "robohome", "initial flips {:#?}", all_day);
             loop {
                 match rx.recv() {
@@ -68,7 +68,13 @@ fn main() -> Result<(), Error> {
                             let _ = out.send(Message::Flips(for_sending));
                         },
                         Message::Refresh => {
-                            all_day = get_flips_for_today().expect("Failed to get flips on update");
+                            match get_flips_for_today() {
+                                Ok(today) => all_day = today,
+                                Err(e) => {
+                                    error!("Failed to get flips for today: {}", e);
+                                    all_day = Vec::new();
+                                }
+                            }
                         },
                         _ => (),
                     },
@@ -80,7 +86,13 @@ fn main() -> Result<(), Error> {
         .name(format!("ipc_thread"))
         .spawn(move || {
             let tx = tx;
-            let rx: Receiver<Result<(), Error>> = listen("database").expect("Error creating mq listener");
+            let rx: Receiver<Result<(), Error>> = match listen("database") {
+                Ok(rx) => rx,
+                Err(e) => {
+                    eprintln!("Failed to create mq listener: {}", e);
+                    ::std::process::exit(1);
+                }
+            };
             loop {
                 match rx.recv() {
                     Ok(_) => {
@@ -100,7 +112,7 @@ fn main() -> Result<(), Error> {
                     },
                     Message::Flips(flips) => {
                         for ref flip in flips {
-                            send("switches", &flip.flip).expect("Failed to send flip message");
+                            send("switches", &flip).expect("Failed to send flip message");
                         }
                     },
                     Message::Refresh => {
@@ -114,7 +126,7 @@ fn main() -> Result<(), Error> {
 }
 #[derive(Debug)]
 enum Message {
-    Flips(Vec<ScheduledFlip>),
+    Flips(Vec<Flip>),
     Refresh,
     Tick,
 }
