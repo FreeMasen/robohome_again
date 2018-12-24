@@ -37,14 +37,14 @@ use warp::{
 fn main() {
     ::std::env::set_var("RUST_LOG", "info");
     env_logger::init();
-    let flipping = put2()
+    let flipping = post2()
         .and(path("flip"))
         .and(json())
         .map(flip_switch);
     let all_switches = get2()
         .and(path("switches"))
         .map(get_switches);
-    let switch_flips = post2()
+    let switch_flips = put2()
         .and(path("switch"))
         .and(json())
         .map(get_switch_flips);
