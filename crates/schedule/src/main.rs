@@ -56,7 +56,7 @@ fn main() -> Result<(), Error> {
             let out = tx2;
             let rx = lookup_rx;
             let mut all_day: Vec<Flip> = get_flips_for_today().unwrap_or(vec![]);
-            debug!(target: "robohome", "initial flips {:#?}", all_day);
+            debug!("initial flips {:#?}", all_day);
             loop {
                 match rx.recv() {
                     Ok(msg) => match msg {
@@ -83,18 +83,18 @@ fn main() -> Result<(), Error> {
             }
         });
     let _ = Builder::new()
-        .name(format!("ipc_thread"))
+        .name(format!("db_update_thread"))
         .spawn(move || {
             let tx = tx;
-            let rx: Receiver<Result<(), Error>> = match listen("database") {
+            let db_rx: Receiver<Result<(), Error>> = match listen("database") {
                 Ok(rx) => rx,
                 Err(e) => {
-                    eprintln!("Failed to create mq listener: {}", e);
+                    error!("Failed to create mq listener for database updates: {}", e);
                     ::std::process::exit(1);
                 }
             };
             loop {
-                match rx.recv() {
+                match db_rx.recv() {
                     Ok(_) => {
                         let _ = tx.send(Message::Refresh);
                     },
@@ -127,6 +127,7 @@ fn main() -> Result<(), Error> {
 #[derive(Debug)]
 enum Message {
     Flips(Vec<Flip>),
+    Flip(i32),
     Refresh,
     Tick,
 }

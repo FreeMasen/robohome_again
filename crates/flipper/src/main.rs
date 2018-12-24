@@ -69,10 +69,13 @@ fn main() {
 
 fn flip_switch(flip: Flip) -> impl Reply {
     match send("switches", &flip) {
-        Ok(_) => Response::builder().body(format!("flipped: {}", flip.code)),
-        Err(e) => Response::builder()
-                            .status(500)
-                            .body(format!("{}", e)),
+        Ok(_) => Response::builder().body(format!(r#"{{flipped: {}}}"#, flip.code)),
+        Err(e) => {
+            let (status, body) = error_response(&e);
+            Response::builder()
+                            .status(status)
+                            .body(body)
+        },
     }
 }
 

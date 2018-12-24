@@ -257,10 +257,18 @@ class SwitchPlate extends React.Component<ISwitchPlateProps, {}> {
         return (
             <div className="switch-plate">
                 <span className="switch-name">{this.props.switchInfo.name}</span>
-                <div className="button on" title="turn on light">
+                <div
+                    className="button on"
+                    title="turn on light"
+                    onClick={ev => this.flipSwitch(Direction.On, ev)}
+                >
                     <span>On</span>
                 </div>
-                <div className="button off" title="turn on light">
+                <div
+                    className="button off"
+                    title="turn on light"
+                    onClick={ev => this.flipSwitch(Direction.Off, ev)}
+                >
                     <span>Off</span>
                 </div>
                 <div className="button info" title="get switch details"
@@ -270,6 +278,27 @@ class SwitchPlate extends React.Component<ISwitchPlateProps, {}> {
                 </div>
             </div>
         );
+    }
+
+    flipSwitch(direction: Direction, ev: React.MouseEvent<HTMLDivElement>) {
+        let code: number;
+        switch (direction) {
+            case Direction.On:
+                    code = this.props.switchInfo.onCode;
+                break;
+            case Direction.Off:
+                    code = this.props.switchInfo.offCode;
+                break;
+        }
+        Http.post('/', new Flip(-1, -1, code))
+            .then(res => {
+                if (res.is_ok()) {
+                    console.log('flipped: ', res.unwrap());
+                } else {
+                    console.error(res.errorMessage());
+                }
+            })
+            .catch(e => console.error('Unable to post flip', e));
     }
 }
 
@@ -420,6 +449,14 @@ class ScheduledFlip {
             json.kind,
         );
     }
+}
+
+class Flip {
+    constructor(
+        public hour: number,
+        public minute: number,
+        public code: number,
+    ) { }
 }
 
 class DayOfTheWeek {
