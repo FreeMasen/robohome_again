@@ -290,7 +290,7 @@ class SwitchPlate extends React.Component<ISwitchPlateProps, {}> {
                     code = this.props.switchInfo.offCode;
                 break;
         }
-        Http.post('/', new Flip(-1, -1, code))
+        Http.post('/flip', new Flip(-1, -1, code))
             .then(res => {
                 if (res.is_ok()) {
                     console.log('flipped: ', res.unwrap());

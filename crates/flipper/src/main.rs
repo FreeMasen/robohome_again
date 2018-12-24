@@ -37,7 +37,7 @@ fn main() {
     ::std::env::set_var("RUST_LOG", "debug");
     env_logger::init();
     let flipping = put2()
-        .and(index())
+        .and(path("flip"))
         .and(json())
         .map(flip_switch);
     let all_switches = get2()
