@@ -395,8 +395,8 @@ class ScheduledFlip {
             ScheduledFlip.offsetHours = hours;
             ScheduledFlip.offsetMinute = minutes;
         }
-        this._hour = hour + ScheduledFlip.offsetHours;
-        this.minute = minute + ScheduledFlip.offsetMinute;
+        this._hour = hour;// + ScheduledFlip.offsetHours;
+        this.minute = minute;// + ScheduledFlip.offsetMinute;
     }
 
     get hour() {
