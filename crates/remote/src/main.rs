@@ -4,6 +4,7 @@ extern crate codesender;
 use robohome_shared::{
     ipc::listen,
     data::Flip,
+    Error,
 };
 
 use codesender::send;
@@ -23,7 +24,7 @@ fn main() {
 fn handle_message(r: Result<Flip, Error>) {
     match r {
         Ok(f) => send_code(f),
-        Err(e) => eprintln!("{}", e);
+        Err(e) => eprintln!("{}", e),
     }
 }
 
