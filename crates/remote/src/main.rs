@@ -22,7 +22,7 @@ fn main() {
 
 fn handle_message(r: Result<Flip, Error>) {
     match r {
-        Ok(f) send_code(f),
+        Ok(f) => send_code(f),
         Err(e) => eprintln!("{}", e);
     }
 }
