@@ -178,9 +178,8 @@ export class App extends React.Component<{}, IAppState> {
                     />)
                     : (<SwitchInfo
                         flips={this.state.selectedSwitchFlips}
-                        name={this.state.selectedSwitchName}
-                        onCode={this.state.switches.find(s => s.name == this.state.selectedSwitchName).onCode}
-                        offCode={this.state.switches.find(s => s.name == this.state.selectedSwitchName).offCode}
+                        switch={this.state.switches.find(s => s.name == this.state.selectedSwitchName)}
+                        back={() => this.setState({view: View.Switches, selectedSwitchName: null, selectedSwitchFlips: null})}
                     />)
                 }
                 </main>
@@ -304,37 +303,59 @@ class SwitchPlate extends React.Component<ISwitchPlateProps, {}> {
 
 interface ISwitchInfoProps {
     flips: ScheduledFlip[];
-    name: string;
-    onCode: number,
-    offCode: number,
+    switch: Switch;
+    back: () => void;
 }
 
-class SwitchInfo extends React.Component<ISwitchInfoProps, {}> {
+interface ISwitchInfoState {
+    flips: ScheduledFlip[];
+    switch: Switch;
+    dirtyFlips: number[];
+    switchDirty: boolean;
+}
+
+class SwitchInfo extends React.Component<ISwitchInfoProps, ISwitchInfoState> {
+    constructor(props) {
+        super(props);
+        this.state = {
+            switch: props.switch.clone(),
+            flips: props.flips.map(f => f.clone()),
+            dirtyFlips: [],
+            switchDirty: false,
+        };
+    }
     render() {
         return (
             <div className="switch-info-container">
-                <h2 className="switch-name">{this.props.name}</h2>
+                <button
+                    type="button"
+                    className="back-button button"
+                    onClick={() => this.props.back()}
+                >Back</button>
+                <h2 className="switch-name">{this.props.switch.name}</h2>
                 <div className="direction-info">
                     <div className="direction-group">
                         <label>On Code</label>
                         <input
                             id="on-input"
-                            defaultValue={this.props.onCode.toString()}
+                            defaultValue={this.props.switch.onCode.toString()}
                             type="number"
+                            onChange={ev => this.updateSwitchCode(Direction.On, ev.currentTarget.value)}
                         />
                     </div>
                     <div className="direction-group">
                         <label>On Code</label>
                         <input
                             id="off-input"
-                            defaultValue={this.props.offCode.toString()}
+                            defaultValue={this.props.switch.offCode.toString()}
                             type="number"
+                            onChange={ev => this.updateSwitchCode(Direction.Off, ev.currentTarget.value)}
                         />
                     </div>
                 </div>
                 <div className="flips">
                 {
-                    this.props.flips.map((f, i) => {
+                    this.state.flips.map((f, i) => {
                         return (
                             <div className="flip-info" key={`flip-info-${i}`}>
                                 <span>{f.hour}</span>:<span>{`0${f.minute}`.substr(-2)}</span><span>{f.tod}</span>
@@ -352,13 +373,27 @@ class SwitchInfo extends React.Component<ISwitchInfoProps, {}> {
                                     </thead>
                                     <tbody>
                                         <tr>
-                                            <td>{this.checkmark(f.dow.monday)}</td>
-                                            <td>{this.checkmark(f.dow.tuesday)}</td>
-                                            <td>{this.checkmark(f.dow.wednesday)}</td>
-                                            <td>{this.checkmark(f.dow.thursday)}</td>
-                                            <td>{this.checkmark(f.dow.friday)}</td>
-                                            <td>{this.checkmark(f.dow.saturday)}</td>
-                                            <td>{this.checkmark(f.dow.sunday)}</td>
+                                            <td
+                                                onClick={ev => this.updateFlip(i, WeekDay.Monday)}
+                                            >{this.checkmark(f.dow.monday)}</td>
+                                            <td
+                                                onClick={ev => this.updateFlip(i, WeekDay.Tuesday)}
+                                            >{this.checkmark(f.dow.tuesday)}</td>
+                                            <td
+                                                onClick={ev => this.updateFlip(i, WeekDay.Wednesday)}
+                                            >{this.checkmark(f.dow.wednesday)}</td>
+                                            <td
+                                                onClick={ev => this.updateFlip(i, WeekDay.Thursday)}
+                                            >{this.checkmark(f.dow.thursday)}</td>
+                                            <td
+                                                onClick={ev => this.updateFlip(i, WeekDay.Friday)}
+                                            >{this.checkmark(f.dow.friday)}</td>
+                                            <td
+                                                onClick={ev => this.updateFlip(i, WeekDay.Saturday)}
+                                            >{this.checkmark(f.dow.saturday)}</td>
+                                            <td
+                                                onClick={ev => this.updateFlip(i, WeekDay.Sunday)}
+                                            >{this.checkmark(f.dow.sunday)}</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -368,10 +403,16 @@ class SwitchInfo extends React.Component<ISwitchInfoProps, {}> {
                 }
                 </div>
                 <div className="switch-info-buttons">
-                    <button id="cancel-button" className="cancel"
-
-                    >Cancel</button>
-                    <button id="save-button" className="save">Save</button>
+                    <button
+                        id="cancel-button"
+                        className="cancel button"
+                        onClick={() => this.cancel()}
+                        >Cancel</button>
+                        <button
+                        id="save-button"
+                        className="save button"
+                        onClick={() => this.save()}
+                    >Save</button>
                 </div>
             </div>
         )
@@ -379,6 +420,85 @@ class SwitchInfo extends React.Component<ISwitchInfoProps, {}> {
 
     checkmark(b) {
         return b ? 'X' : ' ';
+    }
+
+    updateSwitchCode(direction: Direction, newCode: string) {
+        let code: number;
+        try {
+            code = parseInt(newCode);
+        } catch (e) {
+            return console.error('Failed to parse code');
+        }
+        let newSwitch: Switch;
+        if (direction === Direction.On) {
+            newSwitch = new Switch(this.state.switch.id, this.state.switch.name, code, this.state.switch.offCode);
+        } else {
+            newSwitch = new Switch(this.state.switch.id, this.state.switch.name, this.state.switch.onCode, code);
+        }
+        this.setState(Object.assign({}, {switch: newSwitch, switchDirty: true}));
+    }
+
+    updateFlip(idx: number, day: WeekDay) {
+        let flips = this.state.flips.map((f, i) => {
+            if (i === idx) {
+                let flip = f.clone();
+                flip.dow.toggleDay(day);
+                return flip;
+            }
+            return f;
+        });
+        let dirtyFlips = this.state.dirtyFlips.map(f => f);
+        if (dirtyFlips.indexOf(idx) < 0) {
+            dirtyFlips.push(idx);
+        }
+        this.setState({
+            flips,
+            dirtyFlips,
+        });
+    }
+
+    async save() {
+        let newState = {};
+        if (this.state.switchDirty) {
+            let res = await Http.post<Switch, Switch>('/update_switch', this.state.switch, Switch.fromJson);
+            if (res.is_ok()) {
+                newState['switchDirty'] = false;
+                newState['switch'] = res.unwrap();
+            } else {
+                console.error(res.errorMessage());
+            }
+        }
+        let saved = [];
+        let newFlips = this.state.flips.map(f => f.clone());
+        for (let idx of this.state.dirtyFlips.map(f => f)) {
+            try {
+                let res = await Http.post<ScheduledFlip, ScheduledFlip>('update_flip', this.state.flips[idx], ScheduledFlip.fromJson);
+                if (res.is_ok()) {
+                    saved.push(idx);
+                    newFlips[idx] = res.unwrap();
+                } else {
+                    console.error(res.errorMessage());
+                }
+            } catch (e) {
+                console.error('Error in dirtyFlips loop', e);
+                continue;
+            }
+        }
+        newState['flips'] = newFlips;
+        let dirtyFlips = this.state.dirtyFlips.filter(f => saved.indexOf(f) < 0);
+        newState['dirtyFlips'] = dirtyFlips;
+        this.setState(newState);
+    }
+    cancel() {
+        let switch_ = this.props.switch.clone();
+        let flips = this.props.flips.map(f => f);
+        let newState = {
+            dirtyFlips: [],
+            switchDirty: false,
+            switch: switch_,
+            flips,
+        };
+        this.setState(newState);
     }
 }
 
@@ -396,6 +516,14 @@ class Switch {
             json.onCode,
             json.offCode,
         )
+    }
+    clone(): Switch {
+        return new Switch(
+            this.id,
+            this.name,
+            this.onCode,
+            this.offCode,
+        );
     }
 }
 
@@ -449,6 +577,28 @@ class ScheduledFlip {
             json.kind,
         );
     }
+
+    toJSON() {
+        return {
+            id: this.id,
+            hour: this._hour,
+            minute: this.minute,
+            dow: this.dow,
+            direction: this.flip,
+            kind: this.kind,
+        }
+    }
+
+    clone(): ScheduledFlip {
+        return new ScheduledFlip(
+            this.id,
+            this._hour,
+            this.minute,
+            this.dow.clone(),
+            this.flip,
+            this.kind,
+        )
+    }
 }
 
 class Flip {
@@ -481,6 +631,54 @@ class DayOfTheWeek {
             json.sunday,
         )
     }
+
+    toggleDay(wd: WeekDay) {
+        switch (wd) {
+            case WeekDay.Monday:
+                this.monday = !this.monday;
+            break;
+            case WeekDay.Tuesday:
+                this.tuesday = !this.tuesday;
+            break;
+            case WeekDay.Wednesday:
+                this.wednesday = !this.wednesday
+            break;
+            case WeekDay.Thursday:
+                this.thursday = !this.thursday;
+            break;
+            case WeekDay.Friday:
+                this.friday = !this.friday;
+            break;
+            case WeekDay.Saturday:
+                this.saturday = !this.saturday;
+            break;
+            case WeekDay.Sunday:
+                this.sunday = !this.sunday;
+            break;
+        }
+    }
+
+    clone(): DayOfTheWeek {
+        return new DayOfTheWeek(
+            this.monday,
+            this.tuesday,
+            this.wednesday,
+            this.thursday,
+            this.friday,
+            this.saturday,
+            this.sunday,
+        )
+    }
+}
+
+enum WeekDay {
+    Monday,
+    Tuesday,
+    Wednesday,
+    Thursday,
+    Friday,
+    Saturday,
+    Sunday,
 }
 
 enum Direction {

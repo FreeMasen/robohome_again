@@ -262,6 +262,7 @@ AS $BODY$
 	SELECT id, hour, minute, dow, direction, kind
 	FROM public.flip
 	WHERE switch_id = arg_switch
+    ORDER BY hour, minute
 $BODY$;
 
 CREATE OR REPLACE FUNCTION public.get_flips_for_day(arg_dow INTEGER)

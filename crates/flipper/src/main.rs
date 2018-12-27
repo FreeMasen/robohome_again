@@ -9,10 +9,13 @@ extern crate log;
 use robohome_shared::{
     data::{
         Flip,
+        ScheduledFlip,
         get_all_switches,
         Switch,
         check_auth,
         check_token,
+        update_switch as db_update_switch,
+        update_flip as db_update_flip,
     },
     Error,
     ipc::send,
@@ -52,10 +55,19 @@ fn main() {
         .and(path("auth"))
         .and(query())
         .map(check_auth_token);
-
+    let update_switch = post2()
+        .and(path("update_switch"))
+        .and(json())
+        .map(update_switch);
+    let update_flip = post2()
+        .and(path("update_flip"))
+        .and(json())
+        .map(update_flip);
     let routes = flipping
         .or(switch_flips)
         .or(all_switches)
+        .or(update_switch)
+        .or(update_flip)
         .or(auth)
         .or(warp::filters::fs::dir("public"));
     warp::serve(routes.with(warp::log("robohome_flipper")))
@@ -71,7 +83,7 @@ fn main() {
 fn flip_switch(flip: Flip) -> impl Reply {
     info!("POST /flip: {:?}", flip);
     match send("switches", &flip) {
-        Ok(_) => Response::builder().body(format!(r#"{{flipped: {}}}"#, flip.code)),
+        Ok(_) => Response::builder().body(format!(r#"{{"flipped": {}}}"#, flip.code)),
         Err(e) => {
             let (status, body) = error_response(&e);
             Response::builder()
@@ -95,6 +107,42 @@ fn get_switches() -> impl Reply {
     Response::builder()
         .status(status)
         .body(body)
+}
+
+fn update_switch(switch: Switch) -> impl Reply {
+    info!("POST /switch {:?}", switch);
+    let (status, body) = get_update_switch_response(switch);
+    Response::builder()
+        .status(status)
+        .body(body)
+}
+
+fn update_flip(flip: ScheduledFlip) -> impl Reply {
+    info!("POST /flip {:?}", flip);
+    let (status, body) = get_update_flip_response(flip);
+    Response::builder()
+        .status(status)
+        .body(body)
+}
+
+fn get_update_flip_response(flip: ScheduledFlip) -> (u16, String) {
+    match db_update_flip(flip.id, flip.hour, flip.minute, flip.dow, flip.direction, flip.kind) {
+        Ok(flip) => match to_string(&flip) {
+            Ok(body) => (200, body),
+            Err(e) => error_response(&Error::from(e))
+        },
+        Err(e) => error_response(&e)
+    }
+}
+
+fn get_update_switch_response(switch: Switch) -> (u16, String) {
+    match db_update_switch(switch.id, &switch.name, switch.on_code, switch.off_code) {
+        Ok(sw) => match to_string(&sw) {
+            Ok(body) => (200, body),
+            Err(e) => error_response(&Error::from(e)),
+        },
+        Err(e) => error_response(&e)
+    }
 }
 
 fn get_switches_response() -> (u16, String) {

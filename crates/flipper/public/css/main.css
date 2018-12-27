@@ -138,17 +138,27 @@ header {
 
 .switch-info-container {
     display: grid;
-    grid-template-columns: 50px 200px 50px;
-    grid-template-rows: 40px 120px auto;
+    grid-template-columns: 25px 25px 200px 25px 25px;
+    grid-template-rows: 40px 120px auto auto;
     grid-template-areas:
-        'left title right'
-        'left input right'
-        'sch  sch   sch  '
-        'but  but   but  '
-    ;
+        'back title title title right' 'x input input input y' 'sch sch sch sch sch' 'q but but but p';
     margin: auto;
     width: 300px;
     box-shadow: 1px 1px 1px 1px #fbfb71;
+}
+
+.switch-info-container > .back-button {
+    grid-area: back;
+    background: navy;
+    color: #fbfb71;
+    font-size: 14pt;
+    height: 30px;
+    width: 55px;
+    text-align: center;
+    line-height: 10px;
+    border: none;
+    margin-top: 5px;
+    margin-left: 5px;
 }
 
 .switch-info-container > .switch-name {
@@ -223,4 +233,26 @@ header {
 
 .switch-info-buttons {
     grid-area: but;
+    display: flex;
+    flex-flow: row;
+    justify-content: space-around;
+    font-size: 16pt;
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+.switch-info-buttons > button {
+    border: none;
+    font-size: 14pt;
+
+}
+
+#save-button {
+    background: navy;
+    color: #fbfb71;
+}
+
+#cancel-button {
+    background: red;
+    color: navy;
 }
