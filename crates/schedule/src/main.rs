@@ -57,7 +57,13 @@ fn main() -> Result<(), Error> {
             info!("Spawning lookup thread");
             let out = tx2;
             let rx = lookup_rx;
-            let mut all_day: Vec<Flip> = get_flips_for_today().unwrap_or(vec![]);
+            let mut all_day: Vec<Flip> = match get_flips_for_today() {
+                Ok(f) => f,
+                Err(e) => {
+                    error!("failed to get initial flips for today: {}", e);
+                    vec![]
+                },
+            };
             debug!("initial flips {:#?}", all_day);
             loop {
                 match rx.recv() {
