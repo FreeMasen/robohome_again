@@ -80,6 +80,13 @@ CREATE SEQUENCE public.token_id_seq
     NO MAXVALUE
     CACHE 1;
 
+CREATE SEQUENCE special_time_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
 ALTER SEQUENCE public.switch_id_seq
     OWNER to robot;
 
@@ -90,6 +97,9 @@ ALTER SEQUENCE public.authorize_id_seq
     OWNER to robot;
 
 ALTER SEQUENCE public.token_id_seq
+    OWNER to robot;
+
+ALTER SEQUENCE public.special_time_id_seq
     OWNER to robot;
 
 /************************
@@ -149,6 +159,14 @@ WITH (
 )
 TABLESPACE pg_default;
 
+CREATE TABLE public.special_time (
+    id INTEGER NOT NULL DEFAULT nextval('special_time_id_seq'::regclass),
+    date TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_DATE,
+    kind public.FlipKind NOT NULL,
+    hour INT,
+    minute INT
+);
+
 ALTER TABLE public.switch
     OWNER TO robot;
 
@@ -159,6 +177,9 @@ ALTER TABLE public.authorize
     OWNER TO robot;
 
 ALTER TABLE public.token
+    OWNER TO robot;
+
+ALTER TABLE public.special_time
     OWNER TO robot;
 
 /************************
@@ -407,6 +428,57 @@ BEGIN
     WHERE id = arg_id
     RETURNING * into ret;
     RETURN ret;
+END;
+$BODY$;
+
+CREATE OR REPLACE FUNCTION public.update_special_times(
+    predawn_hour INT,
+    predawn_min INT,
+    sunrise_hour INT,
+    sunrise_min INT,
+    dusk_hour INT,
+    dusk_min INT,
+    sunset_hour INT,
+    sunset_min INT
+) RETURNS INT
+LANGUAGE plpgsql
+    COST 100
+    VOLATILE
+AS $BODY$
+DECLARE pd_ct INT := 0;
+DECLARE d_ct INT := 0;
+DECLARE ps_ct INT := 0;
+DECLARE s_ct INT := 0;
+BEGIN
+    INSERT INTO special_time (kind, hour, minute)
+        VALUES ('PreDawn', predawn_hour, predawn_min),
+               ('Sunrise', sunrise_hour, sunrise_min),
+               ('Dusk', dusk_hour, dusk_min),
+               ('Sunset', sunset_hour, sunset_min);
+    UPDATE flip
+    SET hour = predawn_hour,
+    minute = predawn_min
+    WHERE kind = 'PreDawn';
+    GET DIAGNOSTICS pd_ct = ROW_COUNT;
+
+    UPDATE flip
+    SET hour = sunrise_hour,
+    minute = sunrise_min
+    WHERE kind = 'Sunrise';
+    GET DIAGNOSTICS d_ct = ROW_COUNT;
+
+    UPDATE flip
+    SET hour = dusk_hour,
+    minute = dusk_min
+    WHERE kind = 'Dusk';
+    GET DIAGNOSTICS ps_ct = ROW_COUNT;
+
+    UPDATE flip
+    SET hour = sunset_hour,
+    minute = sunset_min
+    WHERE kind = 'Sunset';
+    GET DIAGNOSTICS s_ct = ROW_COUNT;
+    RETURN pd_ct + d_ct + ps_ct + s_ct;
 END;
 $BODY$;
 

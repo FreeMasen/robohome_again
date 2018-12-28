@@ -26,6 +26,7 @@ DROP FUNCTION public.update_flip(INTEGER,INTEGER,INTEGER,INTEGER, public.FlipDir
 *************************/
 DROP FUNCTION public.remove_switch(INTEGER);
 DROP FUNCTION public.remove_flip(INTEGER);
+DROP FUNCTION update_special_times(INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER);
 /************************
 -- TABLES
 *************************/
@@ -33,6 +34,7 @@ DROP TABLE public.flip;
 DROP TABLE public.switch;
 DROP TABLE public.authorize;
 DROP TABLE public.token;
+DROP TABLE public.special_time;
 /************************
 --TYPES
 *************************/
@@ -48,6 +50,7 @@ DROP SEQUENCE public.switch_id_seq;
 DROP SEQUENCE public.flip_id_seq;
 DROP SEQUENCE public.authorize_id_seq;
 DROP SEQUENCE public.token_id_seq;
+DROP SEQUENCE public.special_time_id_seq;
 /************************
 --EXTENSIONS
 *************************/

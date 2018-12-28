@@ -34,6 +34,7 @@ use robohome_shared::{
 };
 
 fn main() -> Result<(), Error> {
+
     if ::std::env::var("RUST_LOG").is_err() {
         ::std::env::set_var("RUST_LOG", "info");
     }
@@ -73,9 +74,11 @@ fn main() -> Result<(), Error> {
                         Message::Tick => {
                             info!("lookup: tick");
                             let now = Utc::now();
-                            let for_sending = all_day.clone().into_iter().filter(|f| {
-                                f.hour == (now.time().hour() as i32) && f.minute == (now.time().minute() as i32)
+                            let now = now.time();
+                            let for_sending: Vec<Flip> = all_day.clone().into_iter().filter(|f| {
+                                chrono::NaiveTime::from_hms(f.hour as u32, f.minute as u32, 0) < now
                             }).collect();
+                            all_day.retain(|f| !for_sending.contains(f));
                             let _ = out.send(Message::Flips(for_sending));
                         },
                         Message::Refresh => {
@@ -109,7 +112,7 @@ fn main() -> Result<(), Error> {
             loop {
                 match db_rx.recv() {
                     Ok(_) => {
-                        error!("Sending refresh message");
+                        info!("Sending refresh message");
                         let _ = tx.send(Message::Refresh);
                     },
                     Err(e) => error!("ipc_thread error: {}", e),

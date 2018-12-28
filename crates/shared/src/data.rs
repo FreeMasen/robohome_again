@@ -278,6 +278,22 @@ pub fn update_flip(id: i32, hour: i32, minute: i32, dow: DayOfTheWeek, direction
     Ok(ret)
 }
 
+pub fn update_special_times(predawn_hour: i32, predawn_min: i32,
+                            sunrise_hour: i32, sunrise_min: i32,
+                            dusk_hour: i32, dusk_min: i32,
+                            sunset_hour: i32, sunset_min: i32) -> Result<i32, Error> {
+    let c = get_connection()?;
+
+    let ct = c.query("SELECT *
+                      FROM update_special_times($1, $2, $3, $4, $5, $6, $7, $8)",
+                      &[&predawn_hour, &predawn_min, &sunrise_hour, &sunrise_min,
+                      &dusk_hour, &dusk_min, &sunset_hour, &sunset_min])?
+                .iter()
+                .map(|r| r.get(0))
+                .next()
+                .ok_or(Error::Other(format!("Failed to get count from update_special_times")))?;
+    Ok(ct)
+}
 
 // **********
 // DELETE

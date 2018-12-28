@@ -369,6 +369,7 @@ class SwitchInfo extends React.Component<ISwitchInfoProps, ISwitchInfoState> {
                                             <th>F</th>
                                             <th>S</th>
                                             <th>U</th>
+                                            <th>K</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -394,6 +395,10 @@ class SwitchInfo extends React.Component<ISwitchInfoProps, ISwitchInfoState> {
                                             <td
                                                 onClick={ev => this.updateFlip(i, WeekDay.Sunday)}
                                             >{this.checkmark(f.dow.sunday)}</td>
+                                            <td
+                                                onClick={() => this.nextKind(i)}
+                                                title={this.flipKindTitle(f.kind)}
+                                            >{this.flipKind(f.kind)}</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -418,8 +423,70 @@ class SwitchInfo extends React.Component<ISwitchInfoProps, ISwitchInfoState> {
         )
     }
 
-    checkmark(b) {
+    checkmark(b: boolean) {
         return b ? 'X' : ' ';
+    }
+
+    flipKind(kind: FlipKind) {
+        switch (kind) {
+            case FlipKind.Custom:
+                return '🦹‍';
+            case FlipKind.PreDawn:
+                return '🔅';
+            case FlipKind.Sunrise:
+                return '🔆';
+            case FlipKind.Dusk:
+                return '🌝';
+            case FlipKind.Sunset:
+                return '🌚';
+        }
+    }
+
+    flipKindTitle(kind: FlipKind) {
+        switch (kind) {
+            case FlipKind.Custom:
+                return 'Custom';
+            case FlipKind.PreDawn:
+                return 'PreDawn';
+            case FlipKind.Sunrise:
+                return 'Sunrise';
+            case FlipKind.Dusk:
+                return 'Dusk';
+            case FlipKind.Sunset:
+                return 'Sunset';
+        }
+    }
+
+    nextKind(idx: number) {
+        let newFlip = this.state.flips[idx].clone();
+        switch (newFlip.kind) {
+            case FlipKind.Custom:
+                newFlip.kind = FlipKind.PreDawn;
+            break;
+            case FlipKind.PreDawn:
+                newFlip.kind = FlipKind.Sunrise;
+            break;
+            case FlipKind.Sunrise:
+                newFlip.kind = FlipKind.Dusk;
+            break;
+            case FlipKind.Dusk:
+                newFlip.kind = FlipKind.Sunset;
+            break;
+            case FlipKind.Sunset:
+                newFlip.kind = FlipKind.Custom;
+            break;
+        }
+        let newFlips = this.state.flips.map((f, i) => {
+            if (i === idx) {
+                return newFlip;
+            }
+            return f;
+        });
+        let dirtyFlips = this.state.dirtyFlips.map(i => i);
+        if (dirtyFlips.indexOf(idx) < 0) {
+            dirtyFlips.push(idx);
+        }
+        this.setState({flips: newFlips, dirtyFlips});
     }
 
     updateSwitchCode(direction: Direction, newCode: string) {
