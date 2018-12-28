@@ -34,7 +34,9 @@ use robohome_shared::{
 };
 
 fn main() -> Result<(), Error> {
-    ::std::env::set_var("RUST_LOG", "info");
+    if ::std::env::var("RUST_LOG").is_err() {
+        ::std::env::set_var("RUST_LOG", "info");
+    }
     env_logger::init();
     info!("Booting scheduler");
     let (tx, rx) = channel();
