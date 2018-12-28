@@ -30,7 +30,7 @@ use ipc::send;
 const CONN_STR: &str = include_str!("../../../db_connection");
 
 fn get_connection() -> Result<Connection, Error> {
-    let ret = Connection::connect(CONN_STR, TlsMode::None)?;
+    let ret = Connection::connect(CONN_STR.trim(), TlsMode::None)?;
     Ok(ret)
 }
 
