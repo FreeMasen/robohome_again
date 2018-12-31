@@ -7,7 +7,6 @@ edition = "2018"
 [dependencies]
 rand = { version = "0.6", features = ["wasm-bindgen"] }
 wasm-bindgen = "0.2"
-robohome_shared = { path = "../shared" }
 
 [dependencies.x25519-dalek]
 version = "0.3"

@@ -1259,7 +1259,6 @@ name = "robohome_crypto"
 version = "0.1.0"
 dependencies = [
  "rand 0.6.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "robohome_shared 0.1.0",
  "wasm-bindgen 0.2.29 (registry+https://github.com/rust-lang/crates.io-index)",
  "x25519-dalek 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]

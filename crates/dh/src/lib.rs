@@ -1,9 +1,6 @@
 extern crate x25519_dalek;
 extern crate rand;
 extern crate wasm_bindgen;
-extern crate robohome_shared;
-
-use robohome_shared::Error;
 
 use wasm_bindgen::prelude::*;
 
@@ -78,7 +75,7 @@ pub fn stringify_buf(buf: &[u8]) -> String {
     buf.iter().map(|i| format!("{:02x}", i)).collect()
 }
 
-pub fn bufify_string(s: &str) -> Result<Vec<u8>, Error> {
+pub fn bufify_string(s: &str) -> Result<Vec<u8>, std::num::ParseIntError> {
     let mut idx = 0;
     let mut ret = Vec::with_capacity(32);
     while idx < 64 {
