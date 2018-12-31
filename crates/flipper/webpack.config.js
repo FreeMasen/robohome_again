@@ -1,13 +1,18 @@
 const path = require('path');
 module.exports = function(env) {
     let ret = {
-        entry: path.join(__dirname, 'ts', 'app.tsx'),
+        entry: {
+            app: path.join(__dirname, 'ts', 'app.tsx'),
+            auth: path.join(__dirname, 'ts', 'auth.js'),
+        },
         output: {
-            filename: 'app.js',
+            filename: '[name].js',
             path: path.join(__dirname, 'public', 'js'),
+            chunkFilename: "[id].chunk.js",
+            publicPath: '/js/'
         },
         resolve: {
-            extensions: ['.ts', '.tsx', '.js', '.jsx']
+            extensions: ['.ts', '.tsx', '.js', '.jsx', '.wasm']
         },
         module: {
             rules: [{

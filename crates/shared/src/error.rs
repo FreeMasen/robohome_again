@@ -8,6 +8,7 @@ use std::{
     sync::mpsc::{
         RecvError
     },
+    num::ParseIntError as IError,
 };
 
 use serde::{
@@ -23,6 +24,7 @@ use serde_json::Error as JsonError;
 use amqp::AMQPError;
 use bincode;
 use postgres::Error as PError;
+use uuid::ParseError as UError;
 
 #[derive(Debug)]
 pub enum Error {
@@ -32,6 +34,8 @@ pub enum Error {
     Other(String),
     Pg(PError),
     Recv(RecvError),
+    Uuid(UError),
+    U8(IError),
 }
 
 impl Error {
@@ -49,6 +53,8 @@ impl Display for Error {
             Error::Other(msg) => msg.fmt(f),
             Error::Pg(e) => e.fmt(f),
             Error::Recv(e) => e.fmt(f),
+            Error::Uuid(e) => e.fmt(f),
+            Error::U8(e) => e.fmt(f),
         }
     }
 }
@@ -62,6 +68,8 @@ impl StdError for Error {
             Error::Other(_) => None,
             Error::Pg(ref e) => Some(e),
             Error::Recv(ref e) => Some(e),
+            Error::Uuid(ref e) => Some(e),
+            Error::U8(ref e) => Some(e),
         }
     }
 }
@@ -93,6 +101,18 @@ impl From<RecvError> for Error {
 impl From<JsonError> for Error {
     fn from(other: JsonError) -> Self {
         Error::Json(other)
+    }
+}
+
+impl From<UError> for Error {
+    fn from(other: UError) -> Self {
+        Error::Uuid(other)
+    }
+}
+
+impl From<IError> for Error {
+    fn from(other: IError) -> Self {
+        Error::U8(other)
     }
 }
 

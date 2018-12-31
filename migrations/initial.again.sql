@@ -138,21 +138,29 @@ WITH (
 )
 TABLESPACE pg_default;
 
-CREATE TABLE public.authorize (
+CREATE TABLE authorize
+(
     id INTEGER NOT NULL DEFAULT nextval('authorize_id_seq'::regclass),
-    created TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    token UUID NOT NULL DEFAULT uuid_generate_v4()
+    token UUID NOT NULL DEFAULT uuid_generate_v4(),
+    issued TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    CONSTRAINT authorize_pkey PRIMARY KEY (id)
 )
 WITH (
     OIDS = FALSE
 )
 TABLESPACE pg_default;
 
-CREATE TABLE public.token (
-    id INTEGER NOT NULL DEFAULT nextval('token_id_seq'::regclass),
-    created TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    user_name CHARACTER VARYING (255) NOT NULL,
-    token UUID NOT NULL DEFAULT uuid_generate_v4()
+CREATE TABLE token
+(
+    id integer NOT NULL DEFAULT nextval('token_id_seq'::regclass),
+    auth_id integer NOT NULL,
+    shared bytea NOT NULL,
+    private bytea NOT NULL,
+    CONSTRAINT tokens_pkey PRIMARY KEY (id),
+    CONSTRAINT auth_token_id FOREIGN KEY (auth_id)
+        REFERENCES public.authorize (id) MATCH SIMPLE
+        ON UPDATE NO ACTION
+        ON DELETE CASCADE
 )
 WITH (
     OIDS = FALSE
@@ -225,21 +233,41 @@ BEGIN
     INSERT INTO public.flip (
         switch_id, hour, minute, dow, direction, kind)
     VALUES (arg_switch, arg_hour, arg_minute, arg_dow, arg_direction, arg_kind)
-    RETURNING * into ret;
+    RETURNING * INTO ret;
     RETURN ret;
 END;
 $BODY$;
 
-CREATE FUNCTION new_token(arg_user TEXT)
-RETURNS UUID
+CREATE FUNCTION new_token(
+    arg_private BYTEA,
+    arg_shared BYTEA,
+    arg_auth UUID
+) RETURNS VOID
+LANGUAGE 'plpgsql'
+    COST 100
+    VOLATILE
+AS $BODY$
+DECLARE fk_id INTEGER;
+BEGIN
+    SELECT id
+        INTO fk_id
+    FROM authorize
+    WHERE token = arg_auth;
+
+    INSERT INTO token (private, shared, auth_id)
+        VALUES (arg_private, arg_shared, fk_id);
+END;
+$BODY$;
+
+CREATE FUNCTION new_auth() RETURNS UUID
 LANGUAGE 'plpgsql'
     COST 100
     VOLATILE
 AS $BODY$
 DECLARE ret UUID;
 BEGIN
-    INSERT INTO token (user_name)
-        VALUES (arg_user)
+    INSERT INTO authorize
+        DEFAULT VALUES
     RETURNING token INTO ret;
     RETURN ret;
 END;
@@ -251,15 +279,14 @@ ALTER FUNCTION public.new_switch(TEXT, INTEGER, INTEGER)
 ALTER FUNCTION public.new_flip(INTEGER ,INTEGER ,INTEGER ,INTEGER ,public.FlipDirection, public.FlipKind)
     OWNER TO robot;
 
-ALTER FUNCTION public.new_token(TEXT)
+ALTER FUNCTION public.new_token(BYTEA, BYTEA, UUID)
     OWNER TO robot;
 
 /************************
 * READ
 *************************/
-CREATE OR REPLACE FUNCTION public.get_all_switches(
-	)
-    RETURNS SETOF switch 
+CREATE OR REPLACE FUNCTION public.get_all_switches()
+    RETURNS SETOF switch
     LANGUAGE 'sql'
 
     COST 100
@@ -328,7 +355,7 @@ $BODY$;
 
 
 
-CREATE OR REPLACE FUNCTION get_auth(
+CREATE OR REPLACE FUNCTION check_auth(
     arg_token UUID
 ) RETURNS TIMESTAMP WITH TIME ZONE
 LANGUAGE plpgsql
@@ -337,27 +364,43 @@ LANGUAGE plpgsql
 AS $BODY$
 DECLARE ret TIMESTAMP WITH TIME ZONE;
 BEGIN
-    SELECT created
+    SELECT a.issued
         INTO ret
-    FROM public.authorize
-    WHERE token = arg_token;
-    RETURN ret;
+    FROM authorize a
+        LEFT JOIN token t
+        ON a.id = t.auth_id
+    WHERE a.token = arg_token
+    AND t.id IS NULL
+    ;
+    CASE WHEN ret IS NULL THEN
+        RAISE EXCEPTION 'Token not found';
+    ELSE
+        RETURN ret;
+    END CASE;
 END;
 $BODY$;
 
-CREATE OR REPLACE FUNCTION get_token(
-    arg_user TEXT
-) RETURNS UUID
+CREATE TYPE TokenVerify AS (
+    private BYTEA,
+    shared BYTEA
+);
+
+CREATE OR REPLACE FUNCTION get_token_pair(
+    arg_auth UUID
+) RETURNS TokenVerify
 LANGUAGE plpgsql
     COST 100
     VOLATILE
 AS $BODY$
-DECLARE ret UUID;
+DECLARE ret TokenVerify;
 BEGIN
-    SELECT token
+    SELECT private, shared
         INTO ret
-    FROM public.token
-    WHERE arg_user = public.token.user_name;
+    FROM token t
+        JOIN authorize a
+        ON t.auth_id = a.id
+    WHERE a.token = arg_auth;
+    RETURN ret;
 END;
 $BODY$;
 
@@ -374,10 +417,7 @@ ALTER FUNCTION public.get_flips_for_day(INTEGER)
 ALTER FUNCTION public.get_flips_for_minute(INTEGER, INTEGER, INTEGER)
     OWNER TO robot;
 
-ALTER FUNCTION public.get_auth(UUID)
-    OWNER TO robot;
-
-ALTER FUNCTION public.get_token(TEXT)
+ALTER FUNCTION public.get_token_pair(UUID)
     OWNER TO robot;
 
 /************************

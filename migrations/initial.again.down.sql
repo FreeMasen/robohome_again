@@ -6,7 +6,8 @@
 *************************/
 DROP FUNCTION public.new_switch(TEXT,INTEGER,INTEGER);
 DROP FUNCTION public.new_flip(INTEGER,INTEGER,INTEGER,INTEGER, public.FlipDirection, public.FlipKind);
-DROP FUNCTION public.new_token(TEXT);
+DROP FUNCTION public.new_token(BYTEA, BYTEA, UUID);
+DROP FUNCTION new_auth();
 /************************
 * READ
 *************************/
@@ -14,8 +15,8 @@ DROP FUNCTION public.get_all_switches();
 DROP FUNCTION public.get_switch_flips(INTEGER);
 DROP FUNCTION public.get_flips_for_day(INTEGER);
 DROP FUNCTION get_flips_for_minute(INTEGER, INTEGER, INTEGER);
-DROP FUNCTION get_auth(UUID);
-DROP FUNCTION get_token(TEXT);
+DROP FUNCTION check_auth(UUID);
+DROP FUNCTION get_token_pair(UUID);
 /************************
 * UPDATE
 *************************/
@@ -32,8 +33,8 @@ DROP FUNCTION update_special_times(INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, 
 *************************/
 DROP TABLE public.flip;
 DROP TABLE public.switch;
-DROP TABLE public.authorize;
 DROP TABLE public.token;
+DROP TABLE public.authorize;
 DROP TABLE public.special_time;
 /************************
 --TYPES
@@ -43,6 +44,7 @@ DROP TYPE public.SwitchFlip;
 DROP TYPE public.FlipDirection;
 DROP TYPE public.FlipKind;
 DROP TYPE public.Auth;
+DROP TYPE TokenVerify;
 /************************
 --SEQUENCES
 *************************/

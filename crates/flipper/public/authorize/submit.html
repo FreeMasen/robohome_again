@@ -7,36 +7,6 @@
         <link rel="stylesheet" type="text/css" href="css/main.css" />
     </head>
     <body>
-        <form onsubmit="void(0)">
-            <label for="name">Your Name</label>
-            <input name="name" id="name" type="text" maxlength="255" />
-            <button type="button" id="submit-button">Submit</button>
-        </form>
+        <script type="text/javascript" src="js/auth.js"></script>
     </body>
-    <script>
-        window.addEventListener('DOMContentLoaded', function() {
-            let b = document.getElementById('submit-button');
-            if (!b) return alert("Something has gone horribly wrong");
-            b.addEventListener('click', submit);
-        });
-        function submit() {
-            let token = localStorage.getItem('auth-token');
-            localStorage.removeItem('auth-token');
-            fetch('/token', {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                }
-            }).then(res => {
-                if (res.ok) {
-                    return res.json();
-                } else {
-                    throw new Error('Failed to authenticate');
-                }
-            }).then(body => {
-                localStorage.setItem('auth-token', body.token);
-                location = '/';
-            });
-        }
-    </script>
 </html>

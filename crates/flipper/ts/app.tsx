@@ -51,12 +51,13 @@ class Http {
         if (!init.headers) {
             init.headers = {};
         }
-        let updatedInit = Object.assign({ headers: {
-            Authorization: `Bearer ${localStorage.getItem('bearer-token')}}`
-            }
-        }, init);
-        console.log('updatedInit', updatedInit);
-        return fetch(path, updatedInit)
+        try {
+            init.headers['Authorization'] = Http.getAuthHeader();
+        } catch (e) {
+            return new Result(null, e);
+        }
+        console.log('updatedInit', init);
+        return fetch(path, init)
             .then(res => {
                 console.log('got response, parsing json');
                 return res.json();
@@ -83,6 +84,15 @@ class Http {
                 console.error('Error sending http request', e);
                 return Result.Err(e) as Result<T>;
             });
+    }
+
+    private static getAuthHeader(): string {
+        let publicKey = localStorage.getItem('public-key');
+        let authToken = localStorage.getItem('auth-token');
+        if (!publicKey || publicKey == '' || !authToken || authToken == '') {
+            throw new Error('Failed to create auth header');
+        }
+        return 'Bearer ' + authToken + '$' + publicKey;
     }
 }
 

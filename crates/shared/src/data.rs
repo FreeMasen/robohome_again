@@ -11,7 +11,6 @@ use chrono::{
     Datelike,
     Weekday,
     DateTime,
-    Duration,
 };
 
 use uuid::{
@@ -140,16 +139,12 @@ pub fn new_scheduled_flip(sw_id: i32, hour: i32, minute: i32, dow: DayOfTheWeek,
     Ok(ret)
 }
 
-pub fn new_token() -> Result<Uuid, Error> {
+pub fn new_token(private: &[u8], shared: &[u8], token: Uuid) -> Result<(), Error> {
     let c = get_connection()?;
-    let ret = c.query("SELECT *
-                        FROM new_token()",
-                        &[])?
-                .iter()
-                .map::<Uuid, _>(|r| r.get(0))
-                .next()
-                .ok_or(Error::new("Unable to create token"))?;
-    Ok(ret)
+    c.query("SELECT *
+            FROM new_token($1, $2, $3)",
+            &[&private, &shared, &token])?;
+    Ok(())
 }
 
 // **********
@@ -208,44 +203,45 @@ pub fn get_flips_for_switch(switch_id: i32) -> Result<Vec<ScheduledFlip>, Error>
     Ok(ret)
 }
 
-pub fn check_auth(token: &Uuid) -> Result<bool, Error> {
+pub fn get_auth_age(token: &Uuid) -> Result<DateTime<Utc>, Error> {
     let c = get_connection()?;
-    if let Some(timestamp) = c.query("SELECT *
-                        FROM get_auth($1)",
+    let ret = c.query("SELECT *
+                        FROM check_auth($1)",
                         &[token])?
                 .iter()
                 .map::<DateTime<Utc>, _>(|r| r.get(0))
                 .next()
-    {
-        let now = Utc::now();
-        let elapsed = timestamp.signed_duration_since(now);
-        return Ok(elapsed < Duration::days(1));
-    }
-    Ok(false)
+                .ok_or(Error::new("Failed to get auth token data"))?;
+    Ok(ret)
 }
 
-pub fn check_token(token: Uuid, name: &str) -> Result<TokenState, Error> {
+pub fn get_private_shared(token: &Uuid) -> Result<(Vec<u8>, Vec<u8>), Error> {
     let c = get_connection()?;
-    let state = if let Some((db_token, timestamp)) = c.query("SELECT token, timestamp
+    if let Some(pair) = c.query("SELECT private, shared
+                                 FROM get_token_pair($1)",
+                                 &[&token])?
+                            .iter()
+                            .map(|r| (r.get(0), r.get(1)))
+                            .next() {
+        Ok(pair)
+    } else {
+        Err(Error::new("Unauthorized token provided"))
+    }
+}
+
+pub fn check_token(token: &Uuid, shared: &[u8]) -> Result<bool, Error> {
+    let c = get_connection()?;
+    if let Some((db_token, db_shared)) = c.query("SELECT token, shared
                         FROM get_token($1)",
-                        &[&name])?
+                        &[&token])?
                 .iter()
-                .map::<(Uuid, DateTime<Utc>), _>(|r| (r.get(0), r.get(1)))
+                .map::<(Uuid, Vec<u8>), _>(|r| (r.get(0), r.get(1)))
                 .next()
     {
-        if token == db_token {
-            if timestamp.signed_duration_since(Utc::now()) < Duration::days(7) {
-                TokenState::Valid
-            } else {
-                TokenState::Expired
-            }
-        } else {
-            TokenState::Invalid
-        }
+        Ok(token == &db_token &&  shared == db_shared.as_slice())
     } else {
-        TokenState::Invalid
-    };
-    Ok(state)
+        Ok(false)
+    }
 }
 
 // **********
